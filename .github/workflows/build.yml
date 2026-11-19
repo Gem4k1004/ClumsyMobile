@@ -19,6 +19,62 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Prepare project
+        run: |
+          mkdir -p app/src/main/java/com/example/clumsy
+          cp AndroidManifest.xml app/src/main/AndroidManifest.xml
+          cp MainActivity.kt app/src/main/java/com/example/clumsy/MainActivity.kt
+          cp OverlayService.kt app/src/main/java/com/example/clumsy/OverlayService.kt
+
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "ClumsyMobile"
+          include(":app")
+          EOF
+
+          cat > build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.6.1' apply false
+              id 'org.jetbrains.kotlin.android' version '2.0.20' apply false
+          }
+          EOF
+
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+              id 'org.jetbrains.kotlin.android'
+          }
+
+          android {
+              namespace 'com.example.clumsy'
+              compileSdk 35
+
+              defaultConfig {
+                  applicationId 'com.example.clumsy'
+                  minSdk 26
+                  targetSdk 28
+                  versionCode 1
+                  versionName '1.0'
+              }
+          }
+          EOF
+
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.9
@@ -30,3 +86,4 @@ jobs:
         with:
           name: ClumsyMobile-apk
           path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
